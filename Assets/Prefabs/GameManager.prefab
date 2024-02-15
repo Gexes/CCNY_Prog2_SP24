@@ -44,6 +44,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a9d1cc054bbb9244842dec6abc70c4a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  collectible1: {fileID: 0}
   myPlayer: {fileID: 0}
   timer: 0
+  score: 0
+  timeLimit: 0
+  collectible1: {fileID: 0}
+  spawnInterval: 0
+  spawnTimer: 0
+  spawnXBounds: {x: 0, y: 0}
+  spawnYBounds: {x: 0, y: 0}
+  TitleText: {fileID: 0}
+  myGameState: 0

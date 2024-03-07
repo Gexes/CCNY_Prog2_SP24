@@ -231,7 +231,7 @@ GameObject:
   - component: {fileID: 70142074}
   m_Layer: 0
   m_Name: Cube
-  m_TagString: Untagged
+  m_TagString: Terrain
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -710,10 +710,11 @@ MonoBehaviour:
   jumpforce: 1
   canJump: 0
   jumped: 0
-  speed: 10
+  speed: 100
   lookSpeed: 100
   myCam: {fileID: 1807678955}
   camLock: 10
+  myfoot: {fileID: 0}
 --- !u!54 &1961145862
 Rigidbody:
   m_ObjectHideFlags: 0

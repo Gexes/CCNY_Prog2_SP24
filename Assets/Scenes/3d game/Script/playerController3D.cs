@@ -2,6 +2,7 @@ using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Mathematics;
+using Unity.VisualScripting.FullSerializer;
 using UnityEngine;
 
 public class playerController3D : MonoBehaviour
@@ -10,25 +11,37 @@ public class playerController3D : MonoBehaviour
     public float speedZ;
     private float moveX;
     private float moveZ;
+
+    [Header("Jump Vars")]
     public float jumpforce = 50f;
     public bool canJump;
     public bool jumped;
 
-
+    [Header("Base Vars")]
     public float speed = 10f;
     public float lookSpeed = 100f;
     Rigidbody myRB;
     public Camera myCam;
     public float camLock; //camera up/down
 
+    [Header("my kick")]
+    public Transform myfoot;
+
     Vector3 myLook;
+
+    private void Awake()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        quaternion currentBot = transform.rotation;
+        //myCam.tranform.rotation = currentBot;
+        myLook = myCam.transform.forward;
+    }
 
     // Start is called before the first frame update
     void Start()
     {
         myRB = GetComponent<Rigidbody>();
-        myLook = myCam.transform.forward;
-        Cursor.lockState = CursorLockMode.Locked;
         canJump = true;
         jumped = false;
     }
@@ -121,13 +134,16 @@ public class playerController3D : MonoBehaviour
     }
     void Kick()
     {
-        bool rayCast = Physics.Raycast(transform.position, Vector3.forward, 5f);
-        Debug.Log("raycast: " + rayCast);
-        Debug.DrawRay(transform.position, Vector3.forward * 5f, Color.blue);
+        RaycastHit hit;
 
-        if(rayCast)
+
+        bool rayCast = Physics.Raycast(transform.position, myCam.transform.forward, out hit, 5f);
+        Debug.DrawRay(transform.position, Vector3.forward * 5f, Color.blue);
+        Debug.Log("raycast: " + hit);
+
+        if (rayCast)
         {
-            //code to kick the ball goes here
+            hit.rigidbody.AddExplosionForce(500f, hit.point, 20f);
         }
 
     }

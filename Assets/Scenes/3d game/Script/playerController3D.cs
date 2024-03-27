@@ -1,80 +1,96 @@
-using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Mathematics;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class playerController3D : MonoBehaviour
 {
-    public float speedX;
-    public float speedZ;
-    private float moveX;
-    private float moveZ;
-    public float jumpforce = 50f;
+    [Header("Base Vars")]
+    public float speed = 10f;
+    public float lookSpeed = 100f;
+
+    [Header("Jump Vars")]
+    public float jumpForce = 50f;
     public bool canJump;
     public bool jumped;
 
+    [Header("Kick Vars")]
+    public Transform myFoot;
+    public float kickForce = 50f;
+    public float upForce = 10f;
+    public float legLength = 5f;
 
-    public float speed = 10f;
-    public float lookSpeed = 100f;
+
     Rigidbody myRB;
     public Camera myCam;
-    public float camLock; //camera up/down
+    public float camLock; //maxlook up/down
 
     Vector3 myLook;
+    float onStartTimer;
+
+    void Awake()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        myLook = transform.localEulerAngles;
+    }
+
 
     // Start is called before the first frame update
     void Start()
     {
         myRB = GetComponent<Rigidbody>();
-        myLook = myCam.transform.forward;
-        Cursor.lockState = CursorLockMode.Locked;
         canJump = true;
         jumped = false;
+        onStartTimer = 0f;
+        //get the current mouse position
+        //zero out our rotations based off that value
+
     }
     // Update is called once per frame
     void Update()
     {
-        Vector3 playerLook = myCam.transform.forward;
-
+        onStartTimer += Time.deltaTime;
         //camera forward direction
-        Debug.DrawRay(transform.position, playerLook * 3f, Color.green);
-
         myLook += DeltaLook() * Time.deltaTime;
+        Debug.DrawRay(transform.position, myCam.transform.forward * 3f, Color.green);
 
         //clamp the magnitude to keep the player from looking fully upside down
         myLook.y = Mathf.Clamp(myLook.y, -camLock, camLock);
 
+        Debug.Log("myLook: " + myLook);
         transform.rotation = Quaternion.Euler(0f, myLook.x, 0f);
         myCam.transform.rotation = Quaternion.Euler(-myLook.y, myLook.x, 0f);
 
-        //check for key and ability to jump
-        if (Input.GetKey(KeyCode.Space))
+        //check for key and ability to jump (canJump boolean)
+        if (Input.GetKey(KeyCode.Space) && canJump)
         {
             jumped = true;
         }
         else { jumped = false; }
+
+        if (Input.GetKey(KeyCode.Return))
+        {
+            Kick();
+        }
     }
 
     void FixedUpdate()
     {
-        moveX = Input.GetAxis("Horizontal");
-        moveZ = Input.GetAxis("Vertical");
-
-
         Vector3 pMove = transform.TransformDirection(Dir());
         myRB.AddForce(pMove * speed * Time.fixedDeltaTime);
 
         //player raw input - in magenta
-        Debug.DrawRay(transform.position, pMove * 5f, Color.magenta);
-        Debug.DrawRay(transform.position, Vector3.up, Color.magenta);
+        //Debug.DrawRay(transform.position, pMove * 5f, Color.magenta);
+        //Debug.DrawRay(transform.position, Vector3.up, Color.magenta);
 
         //combined velocity of the rigidbody in black
-        Debug.DrawRay(transform.position + Vector3.up, myRB.velocity.normalized * 5f, Color.black);
+        //Debug.DrawRay(transform.position + Vector3.up, myRB.velocity.normalized*5f, Color.black);
 
         if (jumped && canJump)
         {
-            jump();
+            Jump();
         }
     }
 
@@ -97,46 +113,65 @@ public class playerController3D : MonoBehaviour
 
     Vector3 DeltaLook()
     {
-        Vector3 dLook = Vector3.zero;
+        Vector3 dLook;
         float rotY = Input.GetAxisRaw("Mouse Y") * lookSpeed;
         float rotX = Input.GetAxisRaw("Mouse X") * lookSpeed;
         dLook = new Vector3(rotX, rotY, 0);
 
         if (dLook != Vector3.zero)
         {
-            Debug.Log("delta look: " + dLook);
+            //Debug.Log("delta look: " + dLook);
         }
 
+        if (onStartTimer < 1f)
+        {
+            dLook = Vector3.ClampMagnitude(dLook, onStartTimer * 10f);
+        }
 
         return dLook;
-
-
-
     }
-    //ad jumpForce and flip boolean for jump request (jumped) to false
-    void jump() 
+
+    //add a jumpForce and flip boolean for jump request (jumped) to false
+    void Jump()
     {
-        myRB.AddForce(Vector3.up * jumpforce);
+        myRB.AddForce(Vector3.up * jumpForce);
         jumped = false;
     }
+
     void Kick()
     {
-        bool rayCast = Physics.Raycast(transform.position, Vector3.forward, 5f);
-        Debug.Log("raycast: " + rayCast);
-        Debug.DrawRay(transform.position, Vector3.forward * 5f, Color.blue);
+        RaycastHit hit;
+        bool rayCast = false; ;
+        //bool rayCast = Physics.Raycast(myFoot.position, myCam.transform.forward, out hit, 5f);
+        if (Physics.SphereCast(myFoot.position, 1f, myCam.transform.position, out hit, legLength)) { rayCast = true; }
+        Debug.DrawRay(myFoot.position, myCam.transform.forward * legLength, Color.blue);
+        Debug.Log("raycast: " + hit);
 
-        if(rayCast)
+        if (rayCast)
         {
-            //code to kick the ball goes here
+            hit.rigidbody.AddExplosionForce(kickForce, hit.point, legLength, upForce);
         }
-
     }
-    private void OnCollisionstay(Collision collision)
+
+    void OnCollisionStay(Collision collision)
     {
         if (collision.gameObject.tag == "Terrain") { canJump = true; }
+
+        //if we jump on floating platforms, turn their rigidbodies on after 1 second
+        //so they fall out from under the player
+        if (collision.gameObject.tag == "Platforms")
+        { StartCoroutine(killPlaform(1f, collision)); }
     }
-    private void OnCollisionExit(Collision collision) 
+
+    private void OnCollisionExit(Collision collision)
     {
         if (collision.gameObject.tag == "Terrain") { canJump = false; }
     }
+
+    IEnumerator killPlaform(float time, Collision collision)
+    {
+        yield return new WaitForSeconds(time);
+        collision.gameObject.GetComponent<Rigidbody>().isKinematic = false;
+    }
+
 }

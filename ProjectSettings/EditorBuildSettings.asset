@@ -14,4 +14,13 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/3d game/3d.unity
     guid: 86edcd677ebebbe4fabfd7bdd11a2dc2
+  - enabled: 1
+    path: Assets/Scenes/Main Menu.unity
+    guid: 14cedbaaf04ef6447a6b188b23048fa3
+  - enabled: 1
+    path: Assets/Scenes/TextScreen1.unity
+    guid: 95d56ad63fdcee745b7c19a2ea530484
+  - enabled: 1
+    path: Assets/Scenes/TextScreen2.unity
+    guid: 04e97b9f1f875404d8c3392b276f64c6
   m_configObjects: {}
